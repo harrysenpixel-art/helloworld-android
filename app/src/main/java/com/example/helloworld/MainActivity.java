@@ -18,11 +18,14 @@ public class MainActivity extends Activity {
     public static final String ACTION_SPEAK = "com.example.helloworld.action.SPEAK";
     public static final String EXTRA_TEXT = "extra_text";
 
+    /** 打开 App 就自动播报一句(无需 Tasker、无需点按钮) */
+    private static final String AUTO_GREETING = "你好!Hello World 已打开!";
+
     private int count = 0;
     private TextToSpeech tts;
     private boolean ttsReady = false;
-    private boolean pendingVoiceGreeting = false;
     private String pendingSpeakText = null;
+    private String pendingGreetingText = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,28 +78,44 @@ public class MainActivity extends Activity {
                         String text = pendingSpeakText;
                         pendingSpeakText = null;
                         speakText(text);
-                    } else if (pendingVoiceGreeting) {
-                        pendingVoiceGreeting = false;
-                        speakGreeting();
+                    } else if (pendingGreetingText != null) {
+                        String text = pendingGreetingText;
+                        pendingGreetingText = null;
+                        speakText(text);
                     }
                 }
             }
         });
 
-        handleIncomingIntent(getIntent());
+        boolean handled = handleIncomingIntent(getIntent());
+        // 全新打开(含"Hey Google,打开 Hello World"):TTS 就绪后自动播报一句
+        if (savedInstanceState == null && !handled) {
+            pendingGreetingText = AUTO_GREETING;
+        }
     }
 
     @Override
     protected void onNewIntent(android.content.Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
-        handleIncomingIntent(intent);
+        boolean handled = handleIncomingIntent(intent);
+        // 已在运行时被再次打开(例如语音再次唤起):也自动播报一句
+        if (!handled) {
+            if (ttsReady) {
+                speakText(AUTO_GREETING);
+            } else {
+                pendingGreetingText = AUTO_GREETING;
+            }
+        }
     }
 
-    /** 统一处理外部来的"让它说话"请求:deep link 语音唤起 / SPEAK 指令 */
-    private void handleIncomingIntent(android.content.Intent intent) {
+    /**
+     * 统一处理外部来的"让它说话"请求:deep link 语音唤起 / SPEAK 指令
+     * @return true 表示已经安排了播报,调用方无需再自动问候
+     */
+    private boolean handleIncomingIntent(android.content.Intent intent) {
         if (intent == null) {
-            return;
+            return false;
         }
         // Tasker / am 发来的播报指令
         if (ACTION_SPEAK.equals(intent.getAction())) {
@@ -110,13 +129,15 @@ public class MainActivity extends Activity {
                 pendingSpeakText = text;
             }
             Toast.makeText(this, "收到播报指令", Toast.LENGTH_SHORT).show();
-            return;
+            return true;
         }
         // 如果是被语音指令 / deep link 唤起的,自动播报一句,证明"联动上了"
         if (isVoiceLaunch()) {
-            pendingVoiceGreeting = true;
+            pendingGreetingText = "你好!Hello World 已通过语音启动,联动成功!";
             Toast.makeText(this, "通过语音指令启动", Toast.LENGTH_SHORT).show();
+            return true;
         }
+        return false;
     }
 
     /** 判断是否来自 App Actions 语音指令的 deep link */
