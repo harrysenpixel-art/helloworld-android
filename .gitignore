@@ -1,0 +1,20 @@
+# Gradle / build outputs
+.gradle/
+build/
+**/build/
+local.properties
+manual-build/
+*.apk
+*.idsig
+
+# Signing keys (never commit these)
+*.keystore
+*.jks
+
+# IDE
+.idea/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
