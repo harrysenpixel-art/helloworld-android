@@ -16,15 +16,23 @@ log(){ echo ">>> $*"; }
 rm -rf "$BUILD"
 mkdir -p "$BUILD/classes" "$BUILD/dex"
 
-log "aapt2 link: 打包 AndroidManifest.xml"
+log "aapt2 compile: 编译资源文件"
+"$BT/aapt2" compile --dir "$PROJ/app/src/main/res" -o "$BUILD/compiled_res.zip"
+
+log "aapt2 link: 打包 AndroidManifest.xml + 资源"
+mkdir -p "$BUILD/gen"
 "$BT/aapt2" link -o "$BUILD/base.apk" \
   -I "$ANDROID_JAR" \
   --manifest "$PROJ/app/src/main/AndroidManifest.xml" \
+  --java "$BUILD/gen" \
+  --auto-add-overlay \
+  -R "$BUILD/compiled_res.zip" \
   --min-sdk-version 26 --target-sdk-version 35 \
-  --version-code 1 --version-name 1.0
+  --version-code 2 --version-name 1.1
 
 log "javac: 编译 Java 源码"
 find "$PROJ/app/src/main/java" -name "*.java" > "$BUILD/sources.txt"
+find "$BUILD/gen" -name "*.java" >> "$BUILD/sources.txt"
 if ! javac -encoding UTF-8 -source 8 -target 8 -cp "$ANDROID_JAR" \
     -d "$BUILD/classes" @"$BUILD/sources.txt" > "$BUILD/javac.log" 2>&1; then
   cat "$BUILD/javac.log"

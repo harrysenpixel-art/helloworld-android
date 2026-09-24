@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Hello World</string>
+    <string name="shortcut_greeting_short">语音问候</string>
+    <string name="shortcut_greeting_long">用语音打开 Hello World 并播报问候</string>
+</resources>

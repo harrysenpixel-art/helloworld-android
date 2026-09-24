@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- App Actions fulfillment: 语音指令匹配后走这个 deep link 进入 App -->
+<actions>
+    <action intentName="actions.intent.OPEN_APP_FEATURE">
+        <fulfillment urlTemplate="https://helloworld.example.com/open{?feature}" />
+    </action>
+</actions>

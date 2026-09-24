@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- App Actions: 让 Google 助理/Gemini 的语音指令可以 deep link 进入本 App -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <capability android:name="actions.intent.OPEN_APP_FEATURE">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.example.helloworld"
+            android:targetClass="com.example.helloworld.MainActivity">
+            <parameter android:name="feature" android:key="feature" />
+        </intent>
+    </capability>
+
+    <shortcut
+        android:shortcutId="voice_greeting"
+        android:shortcutShortLabel="@string/shortcut_greeting_short"
+        android:shortcutLongLabel="@string/shortcut_greeting_long">
+        <capability-binding android:key="actions.intent.OPEN_APP_FEATURE">
+            <parameter-binding android:key="feature" android:value="greeting" />
+        </capability-binding>
+    </shortcut>
+</shortcuts>
