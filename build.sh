@@ -28,7 +28,7 @@ mkdir -p "$BUILD/gen"
   --auto-add-overlay \
   -R "$BUILD/compiled_res.zip" \
   --min-sdk-version 26 --target-sdk-version 35 \
-  --version-code 2 --version-name 1.1
+  --version-code 3 --version-name 1.2
 
 log "javac: 编译 Java 源码"
 find "$PROJ/app/src/main/java" -name "*.java" > "$BUILD/sources.txt"

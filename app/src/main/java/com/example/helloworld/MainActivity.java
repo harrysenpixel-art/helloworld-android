@@ -14,10 +14,15 @@ import java.util.Locale;
 
 public class MainActivity extends Activity {
 
+    /** 外部指令入口:Tasker / am / 语音桥接发送此 action 即可触发播报 */
+    public static final String ACTION_SPEAK = "com.example.helloworld.action.SPEAK";
+    public static final String EXTRA_TEXT = "extra_text";
+
     private int count = 0;
     private TextToSpeech tts;
     private boolean ttsReady = false;
     private boolean pendingVoiceGreeting = false;
+    private String pendingSpeakText = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,7 +71,11 @@ public class MainActivity extends Activity {
                 if (result != TextToSpeech.LANG_MISSING_DATA
                         && result != TextToSpeech.LANG_NOT_SUPPORTED) {
                     ttsReady = true;
-                    if (pendingVoiceGreeting) {
+                    if (pendingSpeakText != null) {
+                        String text = pendingSpeakText;
+                        pendingSpeakText = null;
+                        speakText(text);
+                    } else if (pendingVoiceGreeting) {
                         pendingVoiceGreeting = false;
                         speakGreeting();
                     }
@@ -74,6 +83,35 @@ public class MainActivity extends Activity {
             }
         });
 
+        handleIncomingIntent(getIntent());
+    }
+
+    @Override
+    protected void onNewIntent(android.content.Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        handleIncomingIntent(intent);
+    }
+
+    /** 统一处理外部来的"让它说话"请求:deep link 语音唤起 / SPEAK 指令 */
+    private void handleIncomingIntent(android.content.Intent intent) {
+        if (intent == null) {
+            return;
+        }
+        // Tasker / am 发来的播报指令
+        if (ACTION_SPEAK.equals(intent.getAction())) {
+            String text = intent.getStringExtra(EXTRA_TEXT);
+            if (text == null || text.isEmpty()) {
+                text = "你好!Hello World 已通过语音指令启动,联动成功!";
+            }
+            if (ttsReady) {
+                speakText(text);
+            } else {
+                pendingSpeakText = text;
+            }
+            Toast.makeText(this, "收到播报指令", Toast.LENGTH_SHORT).show();
+            return;
+        }
         // 如果是被语音指令 / deep link 唤起的,自动播报一句,证明"联动上了"
         if (isVoiceLaunch()) {
             pendingVoiceGreeting = true;
@@ -95,12 +133,15 @@ public class MainActivity extends Activity {
     }
 
     private void speakGreeting() {
+        speakText("你好!Hello World 已通过语音启动,联动成功!");
+    }
+
+    private void speakText(String text) {
         if (!ttsReady || tts == null) {
             Toast.makeText(this, "语音引擎还在准备,稍候再试", Toast.LENGTH_SHORT).show();
             return;
         }
-        tts.speak("你好!Hello World 已通过语音启动,联动成功!",
-                TextToSpeech.QUEUE_FLUSH, null, "voice_greeting");
+        tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "voice_greeting");
     }
 
     @Override
