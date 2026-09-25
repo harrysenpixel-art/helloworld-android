@@ -61,6 +61,17 @@ public class MainActivity extends Activity {
         taskerButton.setText("\uD83D\uDCE1 测试通知 Tasker");
         taskerButton.setOnClickListener(v -> notifyTasker());
 
+        // v1.6:底部显示版本号,方便对齐确认
+        TextView versionView = new TextView(this);
+        versionView.setGravity(Gravity.CENTER);
+        versionView.setPadding(0, 32, 0, 0);
+        try {
+            String vn = getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
+            versionView.setText("版本 v" + vn);
+        } catch (Exception e) {
+            versionView.setText("版本未知");
+        }
+
         LinearLayout layout = new LinearLayout(this);
         layout.setOrientation(LinearLayout.VERTICAL);
         layout.setGravity(Gravity.CENTER);
@@ -70,6 +81,7 @@ public class MainActivity extends Activity {
         layout.addView(button);
         layout.addView(speakButton);
         layout.addView(taskerButton);
+        layout.addView(versionView);
 
         setContentView(layout);
 

@@ -28,7 +28,7 @@ mkdir -p "$BUILD/gen"
   --auto-add-overlay \
   -R "$BUILD/compiled_res.zip" \
   --min-sdk-version 26 --target-sdk-version 35 \
-  --version-code 6 --version-name 1.5
+  --version-code 7 --version-name 1.6
 
 log "javac: 编译 Java 源码"
 find "$PROJ/app/src/main/java" -name "*.java" > "$BUILD/sources.txt"
@@ -78,6 +78,10 @@ log "验签"
 "$BT/apksigner" verify --print-certs "$BUILD/app-debug.apk" | head -4
 
 mkdir -p "$HOME/workspace/your_files"
-cp -f "$BUILD/app-debug.apk" "$HOME/workspace/your_files/HelloWorld-debug.apk"
+# 版本号带在文件名里,方便对齐
+VN="1.6"
+cp -f "$BUILD/app-debug.apk" "$HOME/workspace/your_files/HelloWorld-v${VN}.apk"
+# 清掉旧的无版本号文件,避免混淆
+rm -f "$HOME/workspace/your_files/HelloWorld-debug.apk"
 log "完成:"
-ls -lh "$HOME/workspace/your_files/HelloWorld-debug.apk"
+ls -lh "$HOME/workspace/your_files/HelloWorld-v${VN}.apk"
