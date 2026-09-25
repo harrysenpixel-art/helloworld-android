@@ -56,6 +56,11 @@ public class MainActivity extends Activity {
         speakButton.setText("\uD83D\uDD0A 试听语音播报");
         speakButton.setOnClickListener(v -> speakGreeting());
 
+        // v1.5 诊断用:手动触发 Tasker 通知,验证广播通道本身是否通
+        Button taskerButton = new Button(this);
+        taskerButton.setText("\uD83D\uDCE1 测试通知 Tasker");
+        taskerButton.setOnClickListener(v -> notifyTasker());
+
         LinearLayout layout = new LinearLayout(this);
         layout.setOrientation(LinearLayout.VERTICAL);
         layout.setGravity(Gravity.CENTER);
@@ -64,6 +69,7 @@ public class MainActivity extends Activity {
         layout.addView(counter);
         layout.addView(button);
         layout.addView(speakButton);
+        layout.addView(taskerButton);
 
         setContentView(layout);
 
@@ -134,6 +140,8 @@ public class MainActivity extends Activity {
             i.setPackage(TASKER_PACKAGE);
             i.putExtra("task_name", TASKER_TASK_NAME);
             sendBroadcast(i);
+            // v1.5 诊断用:让用户亲眼看到广播已发出
+            Toast.makeText(this, "已发送广播通知 Tasker", Toast.LENGTH_SHORT).show();
         } catch (Exception ignored) {
         }
     }
