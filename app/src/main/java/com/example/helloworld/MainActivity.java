@@ -1,7 +1,6 @@
 package com.example.helloworld;
 
 import android.app.Activity;
-import android.net.Uri;
 import android.os.Bundle;
 import android.speech.tts.TextToSpeech;
 import android.view.Gravity;
@@ -18,14 +17,15 @@ public class MainActivity extends Activity {
     public static final String ACTION_SPEAK = "com.example.helloworld.action.SPEAK";
     public static final String EXTRA_TEXT = "extra_text";
 
-    /** 打开 App 就自动播报一句(无需 Tasker、无需点按钮) */
-    private static final String AUTO_GREETING = "你好!Hello World 已打开!";
+    /** Tasker 联动:App 打开时通知 Tasker 运行此任务,具体做什么由 Tasker 任务决定(高度可定制) */
+    private static final String TASKER_TASK_NAME = "HelloWorld联动";
+    private static final String TASKER_PACKAGE = "net.dinglisch.android.taskerm";
+    private static final String ACTION_RUN_TASKER_TASK = "net.dinglisch.android.tasker.ACTION_TASK";
 
     private int count = 0;
     private TextToSpeech tts;
     private boolean ttsReady = false;
     private String pendingSpeakText = null;
-    private String pendingGreetingText = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -78,19 +78,16 @@ public class MainActivity extends Activity {
                         String text = pendingSpeakText;
                         pendingSpeakText = null;
                         speakText(text);
-                    } else if (pendingGreetingText != null) {
-                        String text = pendingGreetingText;
-                        pendingGreetingText = null;
-                        speakText(text);
                     }
                 }
             }
         });
 
-        boolean handled = handleIncomingIntent(getIntent());
-        // 全新打开(含"Hey Google,打开 Hello World"):TTS 就绪后自动播报一句
-        if (savedInstanceState == null && !handled) {
-            pendingGreetingText = AUTO_GREETING;
+        boolean isSpeakLaunch = ACTION_SPEAK.equals(getIntent().getAction());
+        handleIncomingIntent(getIntent());
+        if (savedInstanceState == null && !isSpeakLaunch) {
+            // 全新打开(含"Hey Google,打开 Hello World"):通知 Tasker,由"HelloWorld联动"任务决定做什么
+            notifyTasker();
         }
     }
 
@@ -99,25 +96,21 @@ public class MainActivity extends Activity {
         super.onNewIntent(intent);
         setIntent(intent);
         boolean handled = handleIncomingIntent(intent);
-        // 已在运行时被再次打开(例如语音再次唤起):也自动播报一句
+        // 非 SPEAK 的再次打开也通知 Tasker;SPEAK 是 Tasker 发来的,不回通知,避免循环
         if (!handled) {
-            if (ttsReady) {
-                speakText(AUTO_GREETING);
-            } else {
-                pendingGreetingText = AUTO_GREETING;
-            }
+            notifyTasker();
         }
     }
 
     /**
-     * 统一处理外部来的"让它说话"请求:deep link 语音唤起 / SPEAK 指令
-     * @return true 表示已经安排了播报,调用方无需再自动问候
+     * 处理 Tasker 发来的 SPEAK 播报指令
+     * @return true 表示是 SPEAK 指令(调用方不要再通知 Tasker,避免循环)
      */
     private boolean handleIncomingIntent(android.content.Intent intent) {
         if (intent == null) {
             return false;
         }
-        // Tasker / am 发来的播报指令
+        // Tasker 发来的播报指令
         if (ACTION_SPEAK.equals(intent.getAction())) {
             String text = intent.getStringExtra(EXTRA_TEXT);
             if (text == null || text.isEmpty()) {
@@ -131,26 +124,18 @@ public class MainActivity extends Activity {
             Toast.makeText(this, "收到播报指令", Toast.LENGTH_SHORT).show();
             return true;
         }
-        // 如果是被语音指令 / deep link 唤起的,自动播报一句,证明"联动上了"
-        if (isVoiceLaunch()) {
-            pendingGreetingText = "你好!Hello World 已通过语音启动,联动成功!";
-            Toast.makeText(this, "通过语音指令启动", Toast.LENGTH_SHORT).show();
-            return true;
-        }
         return false;
     }
 
-    /** 判断是否来自 App Actions 语音指令的 deep link */
-    private boolean isVoiceLaunch() {
-        if (getIntent() == null) {
-            return false;
+    /** 通知 Tasker 运行联动任务(显式广播,无需任何权限,不依赖后台检测) */
+    private void notifyTasker() {
+        try {
+            android.content.Intent i = new android.content.Intent(ACTION_RUN_TASKER_TASK);
+            i.setPackage(TASKER_PACKAGE);
+            i.putExtra("task_name", TASKER_TASK_NAME);
+            sendBroadcast(i);
+        } catch (Exception ignored) {
         }
-        Uri data = getIntent().getData();
-        if (data != null && "helloworld.example.com".equals(data.getHost())) {
-            return true;
-        }
-        return getIntent().hasExtra("feature")
-                || getIntent().hasExtra("greeting");
     }
 
     private void speakGreeting() {
